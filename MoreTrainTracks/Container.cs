@@ -43,11 +43,6 @@ namespace MoreTrainTracks
 
         public void Update()
         {
-            if (Input.GetKeyDown(KeyCode.G))
-            {
-                NetTool tool = ToolsModifierControl.SetTool<NetTool>();
-                tool.m_prefab = Resources.FindObjectsOfTypeAll<NetInfo>().FirstOrDefault(netInfo => netInfo.name == "TramStationRoad");
-            }
             try
             {
                 if (ToolsModifierControl.GetCurrentTool<ToolBase>() is NetTool)
@@ -142,7 +137,6 @@ namespace MoreTrainTracks
 
                     TramTracks = TramVersion(TramTracks, 1);
                     noCableTram = TramVersion(NoCableVersion(noCableTram), 2);
-                   // RoadTramPrefab = TramVersion(RoadTramPrefab, 3);
                     IlluminatedPrefab = Illuminated(IlluminatedPrefab, 0);
                     IlluminatedNoCable = Illuminated(IlluminatedNoCable, 1);
 
@@ -214,16 +208,6 @@ namespace MoreTrainTracks
             }
             if (version == 3)
             {
-                Debug.Log("This thing has " + n.m_lanes.ToList().Count + " lanes !");
-                for (int i = 0; i < n.m_lanes.ToList().Count; i++)
-                {
-                    Debug.Log("Lane " + (i + 1) + " (" + i + ") : vehicle type is " + n.m_lanes[i].m_vehicleType.ToString() + ", type " + n.m_lanes[i].m_laneType + ".");
-                }
-
-                foreach (NetLaneProps.Prop prop in n.m_lanes[1].m_laneProps.m_props)
-                {
-                    prop.m_prop = FindProp("PROPS_TITLE[Railway Crossing Very Long]:0");
-                }
 
 
                 n.m_segments = new NetInfo.Segment[] { n.m_segments[0], originalPrefab.m_segments[1], originalPrefab.m_segments[2] };
