@@ -20,11 +20,9 @@ namespace MoreTrainTracks
     public class Container : MonoBehaviour
     {
         public bool ClonedPrefab;
-        public NetInfo.Lane[] oLanes;
         public Rect window = new Rect(Screen.width - 305, Screen.height - 300, 300, 134);
         public bool showWindow = false, illuminated = false, cable = true, move = false;
         public int texture = 0;
-        public string[] mastsCodeNames = new string[] { "PROPS_TITLE[RailwayPowerline]:0", "CableMast" };
 
         private NetInfo concretePrefab, noCablePrefab, noCableBridge, noCableElevated, noCableSlope, noCableConcrete, noConcreteBridge, noConcreteElevated, noConcreteSlope, AbandonnedPrefab, AbandonnedPrefab2, TramTracks, noCableTram, IlluminatedPrefab, IlluminatedNoCable/*, RoadTramPrefab*/;
         public NetInfo originalPrefab;
@@ -45,6 +43,11 @@ namespace MoreTrainTracks
 
         public void Update()
         {
+            if (Input.GetKeyDown(KeyCode.G))
+            {
+                NetTool tool = ToolsModifierControl.SetTool<NetTool>();
+                tool.m_prefab = Resources.FindObjectsOfTypeAll<NetInfo>().FirstOrDefault(netInfo => netInfo.name == "TramStationRoad");
+            }
             try
             {
                 if (ToolsModifierControl.GetCurrentTool<ToolBase>() is NetTool)
@@ -88,19 +91,8 @@ namespace MoreTrainTracks
         private void ClonePrefab()
         {
             originalPrefab = Resources.FindObjectsOfTypeAll<NetInfo>().FirstOrDefault(netinfo => netinfo.name == "Train Track");
-            /* 
-            var originalPrefab =
-                Resources.FindObjectsOfTypeAll<NetInfo>().
-                FirstOrDefault(netInfo => netInfo.name == "Train Station Track");
-            if (originalPrefab == null)
-            {
-                Debug.LogError("MoreTrainTracks - Train track not found");
-                return;
-            } */
-            // var noCablePrefab = ClonePrefab(originalPrefab, "NoCable Train Track");
             concretePrefab = ClonePrefab(originalPrefab, "ConcreteTrain Track");
             noCablePrefab = ClonePrefab(originalPrefab, "NoCable Train Track");
-            // var noCableTunnel = ClonePrefab(Resources.FindObjectsOfTypeAll<NetInfo>().FirstOrDefault(netInfo => netInfo.name == "Train Track Tunnel"), "NoCable TrainTunnel");
             noCableBridge = ClonePrefab(Resources.FindObjectsOfTypeAll<NetInfo>().FirstOrDefault(netInfo => netInfo.name == "Train Track Bridge"), "NoCable TrainBridge");
             noCableElevated = ClonePrefab(Resources.FindObjectsOfTypeAll<NetInfo>().FirstOrDefault(netInfo => netInfo.name == "Train Track Elevated"), "NoCable TrainElevat");
             noCableSlope = ClonePrefab(Resources.FindObjectsOfTypeAll<NetInfo>().FirstOrDefault(netInfo => netInfo.name == "Train Track Slope"), "NoCable TrainSlope");
@@ -114,7 +106,6 @@ namespace MoreTrainTracks
             noCableTram = ClonePrefab(originalPrefab, "TramTracksNoCable");
             IlluminatedPrefab = ClonePrefab(originalPrefab, "Illuminated Tracks");
             IlluminatedNoCable = ClonePrefab(originalPrefab, "IlluminNoCable");
-            // RoadTramPrefab = ClonePrefab(Resources.FindObjectsOfTypeAll<NetInfo>().FirstOrDefault(netInfo => netInfo.name == "Large Oneway"), "Tram tracks on road");
 
             concretePrefab.m_availableIn = ItemClass.Availability.None;
             noCablePrefab.m_availableIn = ItemClass.Availability.None;
@@ -132,7 +123,6 @@ namespace MoreTrainTracks
             IlluminatedPrefab.m_availableIn = ItemClass.Availability.None;
             IlluminatedNoCable.m_availableIn = ItemClass.Availability.None;
 
-           // RoadTramPrefab.m_availableIn = ItemClass.Availability.None;
 
             if (concretePrefab != null)
             {
@@ -141,16 +131,13 @@ namespace MoreTrainTracks
                     concretePrefab = ConcreteVersion(concretePrefab);
                     noCableConcrete = ConcreteVersion(noCableConcrete);
 
-                    // noCableConcrete.m_segments = new NetInfo.Segment[] { noCableConcrete.m_segments[0], noCableConcrete.m_segments[1] };
+
 
                     AbandonnedPrefab.m_segments = new NetInfo.Segment[] { AbandonnedPrefab.m_segments[0], AbandonnedPrefab.m_segments[1] };
                     AbandonnedPrefab2.m_segments = new NetInfo.Segment[] { AbandonnedPrefab2.m_segments[0] };
 
                     noCablePrefab = NoCableVersion(noCablePrefab);
                     noCableConcrete = NoCableVersion(noCableConcrete);
-
-                    Debug.Log("Wi-fi antenna tex dimensions : " + FindProp("PROPS_TITLE[RailwayPowerline]:0").m_material.mainTexture.height + "x" + FindProp("PROPS_TITLE[RailwayPowerline]:0").m_material.mainTexture.width);
-                    Debug.Log("Wi-fi antenna lod tex dimensions : " + FindProp("PROPS_TITLE[RailwayPowerline]:0").m_lodMaterial.mainTexture.height + "x" + FindProp("PROPS_TITLE[RailwayPowerline]:0").m_lodMaterial.mainTexture.height);
 
 
                     TramTracks = TramVersion(TramTracks, 1);
@@ -165,66 +152,6 @@ namespace MoreTrainTracks
                         AInoCablePrefab.m_slopeInfo = SlopeNoCable(noCableSlope);
                         AInoCablePrefab.m_elevatedInfo = BridgeElevatedNoCable(noCableElevated);
                         AInoCablePrefab.m_bridgeInfo = BridgeElevatedNoCable(noCableBridge);
-
-                        #region Texture and Mesh changes tests
-                        /*
-                        Texture2D tex = new UnityEngine.Texture2D(47, 47);
-                        tex.LoadImage(File.ReadAllBytes(string.Concat(Util.AssemblyDirectory, "/Segment0_template_d.png")));
-                      // Texture2D lodTex = new UnityEngine.Texture2D(47, 47);
-                      // lodTex.LoadImage(File.ReadAllBytes(string.Concat(Util.AssemblyDirectory, "/Segment0_template_lod_d.png")));
-                        
-                        AInoCablePrefab.m_elevatedInfo.m_segments[0].m_mesh = Instantiate<Mesh>(AInoCablePrefab.m_elevatedInfo.m_segments[0].m_mesh);
-                        AInoCablePrefab.m_elevatedInfo.m_segments[0].m_segmentMesh = Instantiate<Mesh>(AInoCablePrefab.m_elevatedInfo.m_segments[0].m_segmentMesh);
-                        AInoCablePrefab.m_elevatedInfo.m_segments[0].m_lodMesh = Instantiate<Mesh>(AInoCablePrefab.m_elevatedInfo.m_segments[0].m_lodMesh);
-                        AInoCablePrefab.m_elevatedInfo.m_segments[0].m_mesh = Util.LoadMesh(string.Concat(Util.AssemblyDirectory, "/Model_segTest.obj"), "ETST ");
-                        AInoCablePrefab.m_elevatedInfo.m_segments[0].m_segmentMesh = Util.LoadMesh(string.Concat(Util.AssemblyDirectory, "/Model_segTest.obj"), "ETST ");
-                        AInoCablePrefab.m_elevatedInfo.m_segments[0].m_lodMesh = Util.LoadMesh(string.Concat(Util.AssemblyDirectory, "/Model_segTest.obj"), "ETST ");
-
-
-                        replaceTexture(AInoCablePrefab.m_elevatedInfo, tex, true, false);
-                        
-                        AInoCablePrefab.m_elevatedInfo.m_segments[0].m_material = Instantiate<Material>(AInoCablePrefab.m_elevatedInfo.m_segments[0].m_material);
-                        AInoCablePrefab.m_elevatedInfo.m_segments[0].m_segmentMaterial = Instantiate<Material>(AInoCablePrefab.m_elevatedInfo.m_segments[0].m_segmentMaterial);
-                        AInoCablePrefab.m_elevatedInfo.m_segments[0].m_lodMaterial = Instantiate<Material>(AInoCablePrefab.m_elevatedInfo.m_segments[0].m_lodMaterial);
-                        AInoCablePrefab.m_elevatedInfo.m_segments[0].m_segmentMaterial.mainTexture = tex;
-                        AInoCablePrefab.m_elevatedInfo.m_segments[0].m_material.mainTexture = tex;
-                        AInoCablePrefab.m_elevatedInfo.m_segments[0].m_lodMaterial.mainTexture = lodTex; 
-                        try
-                        {
-                            Debug.Log("Texture width and height m_material : " + AInoCablePrefab.m_elevatedInfo.m_segments[0].m_material.mainTexture.width);
-                            Debug.Log("Texture height and height m_material : " + AInoCablePrefab.m_elevatedInfo.m_segments[0].m_material.mainTexture.height);
-                        }
-                        catch { }
-                        try
-                        {
-                            Debug.Log("Texture width and height m_lodMaterial : " + AInoCablePrefab.m_elevatedInfo.m_segments[0].m_lodMaterial.mainTexture.width);
-                            Debug.Log("Texture height and height m_lodMaterial : " + AInoCablePrefab.m_elevatedInfo.m_segments[0].m_lodMaterial.mainTexture.height);
-                        }
-                        catch { }
-                        try
-                        {
-                            Debug.Log("Texture width and height m_segmentMaterial : " + AInoCablePrefab.m_elevatedInfo.m_segments[0].m_segmentMaterial.mainTexture.width);
-                            Debug.Log("Texture height and height m_segmentMaterial : " + AInoCablePrefab.m_elevatedInfo.m_segments[0].m_segmentMaterial.mainTexture.height);
-                        }
-                        catch { }
-                        Debug.Log(AInoCablePrefab.m_elevatedInfo.m_segments[0].m_material.mainTexture.width); 
-
-                        AInoCablePrefab.m_bridgeInfo.m_segments[0].m_mesh = Instantiate<Mesh>(AInoCablePrefab.m_bridgeInfo.m_segments[0].m_mesh);
-                        AInoCablePrefab.m_bridgeInfo.m_segments[0].m_segmentMesh = Instantiate<Mesh>(AInoCablePrefab.m_bridgeInfo.m_segments[0].m_segmentMesh);
-                        AInoCablePrefab.m_bridgeInfo.m_segments[0].m_lodMesh = Instantiate<Mesh>(AInoCablePrefab.m_bridgeInfo.m_segments[0].m_lodMesh);
-                        AInoCablePrefab.m_bridgeInfo.m_segments[0].m_mesh = Util.LoadMesh(string.Concat(Util.AssemblyDirectory, "/Model_segTest.obj"), "ETST ");
-                        AInoCablePrefab.m_bridgeInfo.m_segments[0].m_segmentMesh = Util.LoadMesh(string.Concat(Util.AssemblyDirectory, "/Model_segTest.obj"), "ETST ");
-                        AInoCablePrefab.m_bridgeInfo.m_segments[0].m_lodMesh = Util.LoadMesh(string.Concat(Util.AssemblyDirectory, "/Model_segTest.obj"), "ETST ");
-
-                        replaceTexture(AInoCablePrefab.m_bridgeInfo, tex, true, false);
-                         
-                        AInoCablePrefab.m_bridgeInfo.m_segments[0].m_material = Instantiate<Material>(AInoCablePrefab.m_bridgeInfo.m_segments[0].m_material);
-                        AInoCablePrefab.m_bridgeInfo.m_segments[0].m_segmentMaterial = Instantiate<Material>(AInoCablePrefab.m_bridgeInfo.m_segments[0].m_segmentMaterial);
-                        AInoCablePrefab.m_bridgeInfo.m_segments[0].m_lodMaterial = Instantiate<Material>(AInoCablePrefab.m_bridgeInfo.m_segments[0].m_lodMaterial);
-                        AInoCablePrefab.m_bridgeInfo.m_segments[0].m_segmentMaterial.mainTexture = tex;
-                        AInoCablePrefab.m_bridgeInfo.m_segments[0].m_material.mainTexture = tex;
-                        AInoCablePrefab.m_bridgeInfo.m_segments[0].m_lodMaterial.mainTexture = lodTex;  */
-                        #endregion
                     }
                     if (noCableConcrete != null)
                     {
@@ -236,8 +163,6 @@ namespace MoreTrainTracks
 
                     AbandonnedPrefab = Abandonned(AbandonnedPrefab);
                     AbandonnedPrefab2 = Abandonned(AbandonnedPrefab2);
-
-                    // ChangePowerlineMast("CableMast");
                 });
             }
         }
@@ -275,12 +200,6 @@ namespace MoreTrainTracks
             if (version == 1)
             {
                 n.m_segments = new NetInfo.Segment[] { n.m_segments[1], n.m_segments[2] };
-                // lane 1 has cable masts, lane 0 has not. both have ends.
-                /* for (int i = 0; i < n.m_lanes[1].m_laneProps.m_props.ToList().Count; i++)
-                {
-                    if (!(n.m_lanes[0].m_laneProps.m_props[0].m_prop == n.m_lanes[1].m_laneProps.m_props[i].m_prop || n.m_lanes[0].m_laneProps.m_props[1].m_prop == n.m_lanes[1].m_laneProps.m_props[i].m_prop))
-                        n.m_lanes[1].m_laneProps.m_props[i].m_prop = findProp("CableMast");
-                } */
 
                 n.m_createGravel = false;
                 n.m_clipTerrain = false;
@@ -316,9 +235,6 @@ namespace MoreTrainTracks
                 n.m_lanes[8].m_laneProps.m_props = originalPrefab.m_lanes[0].m_laneProps.m_props;
 
                 n.m_nodes = new NetInfo.Node[] { n.m_nodes[0], originalPrefab.m_nodes[0], originalPrefab.m_nodes[1] };
-                // n.m_nodes[n.m_nodes.Count()] = originalPrefab.m_nodes[0];
-                //  n.m_nodes[n.m_nodes.Count() + 1] = originalPrefab.m_nodes[1];
-                //   n.m_nodes[n.m_nodes.Count() + 2] = originalPrefab.m_nodes[2];
             }
             return n;
         }
@@ -402,140 +318,6 @@ namespace MoreTrainTracks
             return n;
         }
 
-        /*
-        public NetInfo ChangePowerlineMast(NetInfo info, PropInfo prop)
-        {
-            NetInfo n = info;
-            foreach (NetInfo.Lane lane in info.m_lanes)
-            {
-                NetLaneProps.Prop[] props = lane.m_laneProps.m_props;
-                lane.m_laneProps = new NetLaneProps() { m_props = props };
-                foreach (NetLaneProps.Prop p in lane.m_laneProps.m_props)
-                {
-                    if (mastsCodeNames.ToList().Contains(p.m_prop.GetLocalizedTitle()))
-                    {
-                        p.m_prop = prop;
-                        p.m_finalProp = prop;
-                    }
-                }
-            }
-            return n;
-        }
-        public void ChangePowerlineMast(string name)
-        {
-            PropInfo CableMast = FindProp("PROPS_TITLE[RailwayPowerline]:0");
-            CableMast.m_mesh = Util.LoadMesh(string.Concat(Util.AssemblyDirectory, "/CableMast.obj"), "CableMastObj");
-            CableMast.m_lodMesh = Util.LoadMesh(string.Concat(Util.AssemblyDirectory, "/CableMast_lod.obj"), "CableMastLod");
-            replaceTexture(CableMast, string.Concat(Util.AssemblyDirectory, "/CableMast_d.png"), string.Concat(Util.AssemblyDirectory, "/CableMast_lod_d.png"));
-        }
-
-        public void replaceTexture(NetInfo ni, Texture tex, bool segments, bool nodes)
-        {
-            if (segments)
-            {
-                Material mat = new Material(ni.m_segments[0].m_material);
-                mat.shader = ni.m_segments[0].m_material.shader;
-                mat.SetTexture("_MainTex", tex);
-                for (int i = 0; i < ni.m_segments.Length; ++i)
-                {
-                    ni.m_segments[i].m_material = mat;
-                    ni.m_segments[i].m_lodRenderDistance = 2500;
-                }
-            }
-            if (nodes)
-            {
-                Material mat = new Material(ni.m_nodes[0].m_material);
-                mat.shader = ni.m_nodes[0].m_material.shader;
-                mat.SetTexture("_MainTex", tex);
-                for (int i = 0; i < ni.m_nodes.Length; ++i)
-                {
-                    ni.m_nodes[i].m_material = mat;
-                    ni.m_nodes[i].m_lodRenderDistance = 2500;
-                }
-            }
-        }
-        public void replaceTexture(PropInfo prop, string path, string pathLOD)
-        {
-            
-            Material mat = new Material(prop.m_material);
-            Texture2D tex = new Texture2D(2, 2);
-            tex.LoadImage(File.ReadAllBytes(path));
-            mat.shader = prop.m_material.shader;
-            mat.SetTexture("_MainTex", tex);
-            prop.m_material = mat; 
-            Material mat = new Material(prop.m_material);
-            try
-            {
-                mat.GetTexture("_MainTex");
-                Export(mat.GetTexture("_MainTex"), "Prop_MainTex");
-                Debug.Log("Can get _MainTex !");
-            }
-            catch
-            {
-                Debug.Log("Can't get _MainTex !");
-            }
-            try
-            {
-                mat.GetTexture("_xyz");
-                Export(mat.GetTexture("_xyz"), "Prop_xyz");
-                Debug.Log("Can get _xyz !");
-            }
-            catch
-            {
-                Debug.Log("Can't get _xyz !");
-            }
-            try
-            {
-                mat.GetTexture("_aci");
-                Export(mat.GetTexture("_aci"), "Prop_aci");
-                Debug.Log("Can get _aci !");
-            }
-            catch
-            {
-                Debug.Log("Can't get _aci !");
-            }
-
-            
-            Material matLod = new Material(prop.m_lodMaterial);
-            Texture2D texLod = new Texture2D(2, 2);
-            texLod.LoadImage(File.ReadAllBytes(pathLOD));
-            matLod.shader = prop.m_lodMaterial.shader;
-            matLod.SetTexture("_MainTex", tex);
-            prop.m_lodMaterial = mat; 
-        }
-
-        void Export(Texture tex, string Name)
-        {
-            byte[] b = ((Texture2D)tex).EncodeToPNG();
-            File.WriteAllBytes(@"C:\Users\Simon\Desktop\FICHIERS\Skylines\Modding\MoreTrainTracks\railwayMastStock\" + Name + ".png", b);
-        }
-
-        public static string AssemblyDirectory
-        {
-            get
-            {
-                var pluginManager = PluginManager.instance;
-                var plugins = pluginManager.GetPluginsInfo();
-
-                foreach (var item in plugins)
-                {
-                    try
-                    {
-                        var instances = item.GetInstances<IUserMod>();
-                        if (!(instances.FirstOrDefault() is Mod))
-                        {
-                            continue;
-                        }
-                        return item.modPath;
-                    }
-                    catch { }
-                }
-                throw new Exception("Failed to find MoreTrainTracks assembly!");
-
-            }
-        }
-*/
-
         private void later(Action a)
         {
             Singleton<LoadingManager>.instance.QueueLoadingAction(InCoroutine(a));
@@ -578,30 +360,13 @@ namespace MoreTrainTracks
             return null;
         }
 
-        /*
-        public PropInfo CreatePropInfo(string name)
-        {
-            string meshPath = "/" + name + ".obj";
-            string meshPathLod = "/" + name + "_lod.obj";
-            string texturePath = "/" + name + "_d.png";
-            string texturePathLod = "/" + name + "_lod_d.png";
-            Texture2D texture = new Texture2D(3,3), textureLod = new Texture2D(3,3);
-            texture.LoadImage(File.ReadAllBytes(string.Concat(Util.AssemblyDirectory, texturePath)));
-            textureLod.LoadImage(File.ReadAllBytes(string.Concat(Util.AssemblyDirectory, texturePathLod)));
-            PropInfo prop = Instantiate(FindProp("Wi-Fi Antenna"));
-            prop.m_mesh = Util.LoadMesh(string.Concat(Util.AssemblyDirectory, meshPath), name);
-            prop.m_lodMesh = Util.LoadMesh(string.Concat(Util.AssemblyDirectory, meshPathLod), name + "_LOD");
-            prop.m_material.SetTexture("_MainTex", texture);
-            prop.m_lodMaterial.SetTexture("_MainTex", textureLod);
-            return prop;
-        } */
-
         public bool IsTrainTool(NetInfo info)
         {
             if (info == originalPrefab || info == concretePrefab || info == noCablePrefab || info == noCableBridge || info == noCableElevated || info == noCableSlope || info == noCableConcrete || info == noConcreteBridge || info == noConcreteElevated || info == noConcreteSlope || info == AbandonnedPrefab || info == AbandonnedPrefab2 || info == TramTracks || info == noCableTram || info == IlluminatedPrefab || info == IlluminatedNoCable)
                 return true;
             return false;
         }
+
 
         void SetTool(int v = 0)
         {
