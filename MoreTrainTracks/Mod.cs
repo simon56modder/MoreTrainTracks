@@ -1,5 +1,6 @@
 ﻿using ICities;
 using UnityEngine;
+using System;
 
 namespace MoreTrainTracks
 {
@@ -7,6 +8,7 @@ namespace MoreTrainTracks
     {
 
         public static Container Container;
+        public const UInt64 workshop_id = 537973489;
 
         public string Name
         {
@@ -32,7 +34,7 @@ namespace MoreTrainTracks
             base.OnReleased();
             if (Container != null)
             {
-                Object.Destroy(Container.gameObject);
+                UnityEngine.Object.Destroy(Container.gameObject);
             }
         }
     }

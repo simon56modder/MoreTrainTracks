@@ -8,6 +8,12 @@ using UnityEngine;
 using System.IO;
 using ColossalFramework.UI;
 using ColossalFramework.Steamworks;
+using ColossalFramework.Globalization;
+using ColossalFramework.IO;
+using ColossalFramework.Steamworks;
+using ColossalFramework.Plugins;
+using ICities;
+using UnityEngine;
 
 namespace MoreTrainTracks
 {
@@ -18,6 +24,7 @@ namespace MoreTrainTracks
         public Rect window = new Rect(Screen.width - 305, Screen.height - 300, 300, 134);
         public bool showWindow = false, illuminated = false, cable = true, move = false;
         public int texture = 0;
+        public string[] mastsCodeNames = new string[] { "PROPS_TITLE[RailwayPowerline]:0", "CableMast" };
 
         private NetInfo concretePrefab, noCablePrefab, noCableBridge, noCableElevated, noCableSlope, noCableConcrete, noConcreteBridge, noConcreteElevated, noConcreteSlope, AbandonnedPrefab, AbandonnedPrefab2, TramTracks, noCableTram, IlluminatedPrefab, IlluminatedNoCable/*, RoadTramPrefab*/;
         public NetInfo originalPrefab;
@@ -43,6 +50,16 @@ namespace MoreTrainTracks
                 if (ToolsModifierControl.GetCurrentTool<ToolBase>() is NetTool)
                 {
                     if (IsTrainTool(ToolsModifierControl.GetCurrentTool<NetTool>().m_prefab))
+                    {
+                        showWindow = true;
+                        SetTool();
+                    }
+                    else
+                        showWindow = false;
+                }
+                else if (ToolsModifierControl.GetCurrentTool<ToolBase>().GetType().Name == "NetToolFine")
+                {
+                    if (IsTrainTool((ToolsModifierControl.GetCurrentTool<ToolBase>() as NetTool).m_prefab))
                     {
                         showWindow = true;
                         SetTool();
@@ -131,7 +148,9 @@ namespace MoreTrainTracks
 
                     noCablePrefab = NoCableVersion(noCablePrefab);
                     noCableConcrete = NoCableVersion(noCableConcrete);
-                    
+
+                    Debug.Log("Wi-fi antenna tex dimensions : " + FindProp("PROPS_TITLE[RailwayPowerline]:0").m_material.mainTexture.height + "x" + FindProp("PROPS_TITLE[RailwayPowerline]:0").m_material.mainTexture.width);
+                    Debug.Log("Wi-fi antenna lod tex dimensions : " + FindProp("PROPS_TITLE[RailwayPowerline]:0").m_lodMaterial.mainTexture.height + "x" + FindProp("PROPS_TITLE[RailwayPowerline]:0").m_lodMaterial.mainTexture.height);
 
 
                     TramTracks = TramVersion(TramTracks, 1);
@@ -146,18 +165,79 @@ namespace MoreTrainTracks
                         AInoCablePrefab.m_slopeInfo = SlopeNoCable(noCableSlope);
                         AInoCablePrefab.m_elevatedInfo = BridgeElevatedNoCable(noCableElevated);
                         AInoCablePrefab.m_bridgeInfo = BridgeElevatedNoCable(noCableBridge);
+
+                        #region Texture and Mesh changes tests
+                        /*
+                        Texture2D tex = new UnityEngine.Texture2D(47, 47);
+                        tex.LoadImage(File.ReadAllBytes(string.Concat(Util.AssemblyDirectory, "/Segment0_template_d.png")));
+                      // Texture2D lodTex = new UnityEngine.Texture2D(47, 47);
+                      // lodTex.LoadImage(File.ReadAllBytes(string.Concat(Util.AssemblyDirectory, "/Segment0_template_lod_d.png")));
+                        
+                        AInoCablePrefab.m_elevatedInfo.m_segments[0].m_mesh = Instantiate<Mesh>(AInoCablePrefab.m_elevatedInfo.m_segments[0].m_mesh);
+                        AInoCablePrefab.m_elevatedInfo.m_segments[0].m_segmentMesh = Instantiate<Mesh>(AInoCablePrefab.m_elevatedInfo.m_segments[0].m_segmentMesh);
+                        AInoCablePrefab.m_elevatedInfo.m_segments[0].m_lodMesh = Instantiate<Mesh>(AInoCablePrefab.m_elevatedInfo.m_segments[0].m_lodMesh);
+                        AInoCablePrefab.m_elevatedInfo.m_segments[0].m_mesh = Util.LoadMesh(string.Concat(Util.AssemblyDirectory, "/Model_segTest.obj"), "ETST ");
+                        AInoCablePrefab.m_elevatedInfo.m_segments[0].m_segmentMesh = Util.LoadMesh(string.Concat(Util.AssemblyDirectory, "/Model_segTest.obj"), "ETST ");
+                        AInoCablePrefab.m_elevatedInfo.m_segments[0].m_lodMesh = Util.LoadMesh(string.Concat(Util.AssemblyDirectory, "/Model_segTest.obj"), "ETST ");
+
+
+                        replaceTexture(AInoCablePrefab.m_elevatedInfo, tex, true, false);
+                        
+                        AInoCablePrefab.m_elevatedInfo.m_segments[0].m_material = Instantiate<Material>(AInoCablePrefab.m_elevatedInfo.m_segments[0].m_material);
+                        AInoCablePrefab.m_elevatedInfo.m_segments[0].m_segmentMaterial = Instantiate<Material>(AInoCablePrefab.m_elevatedInfo.m_segments[0].m_segmentMaterial);
+                        AInoCablePrefab.m_elevatedInfo.m_segments[0].m_lodMaterial = Instantiate<Material>(AInoCablePrefab.m_elevatedInfo.m_segments[0].m_lodMaterial);
+                        AInoCablePrefab.m_elevatedInfo.m_segments[0].m_segmentMaterial.mainTexture = tex;
+                        AInoCablePrefab.m_elevatedInfo.m_segments[0].m_material.mainTexture = tex;
+                        AInoCablePrefab.m_elevatedInfo.m_segments[0].m_lodMaterial.mainTexture = lodTex; 
+                        try
+                        {
+                            Debug.Log("Texture width and height m_material : " + AInoCablePrefab.m_elevatedInfo.m_segments[0].m_material.mainTexture.width);
+                            Debug.Log("Texture height and height m_material : " + AInoCablePrefab.m_elevatedInfo.m_segments[0].m_material.mainTexture.height);
+                        }
+                        catch { }
+                        try
+                        {
+                            Debug.Log("Texture width and height m_lodMaterial : " + AInoCablePrefab.m_elevatedInfo.m_segments[0].m_lodMaterial.mainTexture.width);
+                            Debug.Log("Texture height and height m_lodMaterial : " + AInoCablePrefab.m_elevatedInfo.m_segments[0].m_lodMaterial.mainTexture.height);
+                        }
+                        catch { }
+                        try
+                        {
+                            Debug.Log("Texture width and height m_segmentMaterial : " + AInoCablePrefab.m_elevatedInfo.m_segments[0].m_segmentMaterial.mainTexture.width);
+                            Debug.Log("Texture height and height m_segmentMaterial : " + AInoCablePrefab.m_elevatedInfo.m_segments[0].m_segmentMaterial.mainTexture.height);
+                        }
+                        catch { }
+                        Debug.Log(AInoCablePrefab.m_elevatedInfo.m_segments[0].m_material.mainTexture.width); 
+
+                        AInoCablePrefab.m_bridgeInfo.m_segments[0].m_mesh = Instantiate<Mesh>(AInoCablePrefab.m_bridgeInfo.m_segments[0].m_mesh);
+                        AInoCablePrefab.m_bridgeInfo.m_segments[0].m_segmentMesh = Instantiate<Mesh>(AInoCablePrefab.m_bridgeInfo.m_segments[0].m_segmentMesh);
+                        AInoCablePrefab.m_bridgeInfo.m_segments[0].m_lodMesh = Instantiate<Mesh>(AInoCablePrefab.m_bridgeInfo.m_segments[0].m_lodMesh);
+                        AInoCablePrefab.m_bridgeInfo.m_segments[0].m_mesh = Util.LoadMesh(string.Concat(Util.AssemblyDirectory, "/Model_segTest.obj"), "ETST ");
+                        AInoCablePrefab.m_bridgeInfo.m_segments[0].m_segmentMesh = Util.LoadMesh(string.Concat(Util.AssemblyDirectory, "/Model_segTest.obj"), "ETST ");
+                        AInoCablePrefab.m_bridgeInfo.m_segments[0].m_lodMesh = Util.LoadMesh(string.Concat(Util.AssemblyDirectory, "/Model_segTest.obj"), "ETST ");
+
+                        replaceTexture(AInoCablePrefab.m_bridgeInfo, tex, true, false);
+                         
+                        AInoCablePrefab.m_bridgeInfo.m_segments[0].m_material = Instantiate<Material>(AInoCablePrefab.m_bridgeInfo.m_segments[0].m_material);
+                        AInoCablePrefab.m_bridgeInfo.m_segments[0].m_segmentMaterial = Instantiate<Material>(AInoCablePrefab.m_bridgeInfo.m_segments[0].m_segmentMaterial);
+                        AInoCablePrefab.m_bridgeInfo.m_segments[0].m_lodMaterial = Instantiate<Material>(AInoCablePrefab.m_bridgeInfo.m_segments[0].m_lodMaterial);
+                        AInoCablePrefab.m_bridgeInfo.m_segments[0].m_segmentMaterial.mainTexture = tex;
+                        AInoCablePrefab.m_bridgeInfo.m_segments[0].m_material.mainTexture = tex;
+                        AInoCablePrefab.m_bridgeInfo.m_segments[0].m_lodMaterial.mainTexture = lodTex;  */
+                        #endregion
                     }
                     if (noCableConcrete != null)
                     {
                         var AInoCableConcrete = noCableConcrete.GetComponent<TrainTrackAI>();
-                        AInoCableConcrete.m_slopeInfo = SlopeNoCable(noConcreteSlope);
-                        AInoCableConcrete.m_elevatedInfo = BridgeElevatedNoCable(noConcreteElevated);
-                        AInoCableConcrete.m_bridgeInfo = BridgeElevatedNoCable(noConcreteBridge);
+                        AInoCableConcrete.m_slopeInfo = SlopeNoCable(noConcreteSlope, true);
+                        AInoCableConcrete.m_elevatedInfo = BridgeElevatedNoCable(noConcreteElevated, true);
+                        AInoCableConcrete.m_bridgeInfo = BridgeElevatedNoCable(noConcreteBridge, true);
                     }
 
                     AbandonnedPrefab = Abandonned(AbandonnedPrefab);
                     AbandonnedPrefab2 = Abandonned(AbandonnedPrefab2);
 
+                    // ChangePowerlineMast("CableMast");
                 });
             }
         }
@@ -165,10 +245,10 @@ namespace MoreTrainTracks
         void OnGUI()
         {
             if (showWindow)
-                window = GUI.Window(this.GetInstanceID(), window, Window, "MoreTrainTracks");
+                window = GUI.Window(537973489, window, Window, "MoreTrainTracks");
         }
 
-        void Window(int id)
+        void Window(int id = 537973489)
         {
             if (move)
             {
@@ -263,23 +343,26 @@ namespace MoreTrainTracks
             return n;
         }
 
-        private NetInfo NoCableVersion(NetInfo source, bool ChangeProps = true)
+        private NetInfo NoCableVersion(NetInfo source)
         {
             NetInfo n = source;
-            if (ChangeProps)
-                n.m_lanes[1].m_laneProps = n.m_lanes[0].m_laneProps;
+            n.m_lanes[1].m_laneProps = n.m_lanes[0].m_laneProps;
             n.m_segments = new NetInfo.Segment[] { n.m_segments[0], n.m_segments[1] };
             n.m_nodes = new NetInfo.Node[] { n.m_nodes[0], n.m_nodes[1], n.m_nodes[2] };
             return n;
         }
 
-        private NetInfo BridgeElevatedNoCable(NetInfo source, bool ChangeProps = true)
+        private NetInfo BridgeElevatedNoCable(NetInfo source, bool concrete = false)
         {
             NetInfo n = source;
-            if (ChangeProps)
-                n.m_lanes[1].m_laneProps = n.m_lanes[0].m_laneProps;
+            n.m_lanes[1].m_laneProps = n.m_lanes[0].m_laneProps;
             n.m_segments = new NetInfo.Segment[] { n.m_segments[0], n.m_segments[1] };
             n.m_nodes = new NetInfo.Node[] { n.m_nodes[0], n.m_nodes[1] };
+            if (concrete)
+            {
+                n.m_createGravel = false;
+                n.m_createPavement = true;
+            }
             return n;
         }
 
@@ -305,15 +388,153 @@ namespace MoreTrainTracks
             return n;
         }
 
-        private NetInfo SlopeNoCable(NetInfo source, bool ChangeProps = true)
+        private NetInfo SlopeNoCable(NetInfo source, bool concrete = false)
         {
             NetInfo n = source;
-            if (ChangeProps)
-                n.m_lanes[1].m_laneProps = n.m_lanes[0].m_laneProps;
+            n.m_lanes[1].m_laneProps = n.m_lanes[0].m_laneProps;
             n.m_segments = new NetInfo.Segment[] { n.m_segments[0], n.m_segments[1], n.m_segments[3] };
             n.m_nodes = new NetInfo.Node[] { n.m_nodes[0], n.m_nodes[1], n.m_nodes[3] };
+            if (concrete)
+            {
+                n.m_createGravel = false;
+                n.m_createPavement = true;
+            }
             return n;
         }
+
+        /*
+        public NetInfo ChangePowerlineMast(NetInfo info, PropInfo prop)
+        {
+            NetInfo n = info;
+            foreach (NetInfo.Lane lane in info.m_lanes)
+            {
+                NetLaneProps.Prop[] props = lane.m_laneProps.m_props;
+                lane.m_laneProps = new NetLaneProps() { m_props = props };
+                foreach (NetLaneProps.Prop p in lane.m_laneProps.m_props)
+                {
+                    if (mastsCodeNames.ToList().Contains(p.m_prop.GetLocalizedTitle()))
+                    {
+                        p.m_prop = prop;
+                        p.m_finalProp = prop;
+                    }
+                }
+            }
+            return n;
+        }
+        public void ChangePowerlineMast(string name)
+        {
+            PropInfo CableMast = FindProp("PROPS_TITLE[RailwayPowerline]:0");
+            CableMast.m_mesh = Util.LoadMesh(string.Concat(Util.AssemblyDirectory, "/CableMast.obj"), "CableMastObj");
+            CableMast.m_lodMesh = Util.LoadMesh(string.Concat(Util.AssemblyDirectory, "/CableMast_lod.obj"), "CableMastLod");
+            replaceTexture(CableMast, string.Concat(Util.AssemblyDirectory, "/CableMast_d.png"), string.Concat(Util.AssemblyDirectory, "/CableMast_lod_d.png"));
+        }
+
+        public void replaceTexture(NetInfo ni, Texture tex, bool segments, bool nodes)
+        {
+            if (segments)
+            {
+                Material mat = new Material(ni.m_segments[0].m_material);
+                mat.shader = ni.m_segments[0].m_material.shader;
+                mat.SetTexture("_MainTex", tex);
+                for (int i = 0; i < ni.m_segments.Length; ++i)
+                {
+                    ni.m_segments[i].m_material = mat;
+                    ni.m_segments[i].m_lodRenderDistance = 2500;
+                }
+            }
+            if (nodes)
+            {
+                Material mat = new Material(ni.m_nodes[0].m_material);
+                mat.shader = ni.m_nodes[0].m_material.shader;
+                mat.SetTexture("_MainTex", tex);
+                for (int i = 0; i < ni.m_nodes.Length; ++i)
+                {
+                    ni.m_nodes[i].m_material = mat;
+                    ni.m_nodes[i].m_lodRenderDistance = 2500;
+                }
+            }
+        }
+        public void replaceTexture(PropInfo prop, string path, string pathLOD)
+        {
+            
+            Material mat = new Material(prop.m_material);
+            Texture2D tex = new Texture2D(2, 2);
+            tex.LoadImage(File.ReadAllBytes(path));
+            mat.shader = prop.m_material.shader;
+            mat.SetTexture("_MainTex", tex);
+            prop.m_material = mat; 
+            Material mat = new Material(prop.m_material);
+            try
+            {
+                mat.GetTexture("_MainTex");
+                Export(mat.GetTexture("_MainTex"), "Prop_MainTex");
+                Debug.Log("Can get _MainTex !");
+            }
+            catch
+            {
+                Debug.Log("Can't get _MainTex !");
+            }
+            try
+            {
+                mat.GetTexture("_xyz");
+                Export(mat.GetTexture("_xyz"), "Prop_xyz");
+                Debug.Log("Can get _xyz !");
+            }
+            catch
+            {
+                Debug.Log("Can't get _xyz !");
+            }
+            try
+            {
+                mat.GetTexture("_aci");
+                Export(mat.GetTexture("_aci"), "Prop_aci");
+                Debug.Log("Can get _aci !");
+            }
+            catch
+            {
+                Debug.Log("Can't get _aci !");
+            }
+
+            
+            Material matLod = new Material(prop.m_lodMaterial);
+            Texture2D texLod = new Texture2D(2, 2);
+            texLod.LoadImage(File.ReadAllBytes(pathLOD));
+            matLod.shader = prop.m_lodMaterial.shader;
+            matLod.SetTexture("_MainTex", tex);
+            prop.m_lodMaterial = mat; 
+        }
+
+        void Export(Texture tex, string Name)
+        {
+            byte[] b = ((Texture2D)tex).EncodeToPNG();
+            File.WriteAllBytes(@"C:\Users\Simon\Desktop\FICHIERS\Skylines\Modding\MoreTrainTracks\railwayMastStock\" + Name + ".png", b);
+        }
+
+        public static string AssemblyDirectory
+        {
+            get
+            {
+                var pluginManager = PluginManager.instance;
+                var plugins = pluginManager.GetPluginsInfo();
+
+                foreach (var item in plugins)
+                {
+                    try
+                    {
+                        var instances = item.GetInstances<IUserMod>();
+                        if (!(instances.FirstOrDefault() is Mod))
+                        {
+                            continue;
+                        }
+                        return item.modPath;
+                    }
+                    catch { }
+                }
+                throw new Exception("Failed to find MoreTrainTracks assembly!");
+
+            }
+        }
+*/
 
         private void later(Action a)
         {
@@ -356,6 +577,24 @@ namespace MoreTrainTracks
             }
             return null;
         }
+
+        /*
+        public PropInfo CreatePropInfo(string name)
+        {
+            string meshPath = "/" + name + ".obj";
+            string meshPathLod = "/" + name + "_lod.obj";
+            string texturePath = "/" + name + "_d.png";
+            string texturePathLod = "/" + name + "_lod_d.png";
+            Texture2D texture = new Texture2D(3,3), textureLod = new Texture2D(3,3);
+            texture.LoadImage(File.ReadAllBytes(string.Concat(Util.AssemblyDirectory, texturePath)));
+            textureLod.LoadImage(File.ReadAllBytes(string.Concat(Util.AssemblyDirectory, texturePathLod)));
+            PropInfo prop = Instantiate(FindProp("Wi-Fi Antenna"));
+            prop.m_mesh = Util.LoadMesh(string.Concat(Util.AssemblyDirectory, meshPath), name);
+            prop.m_lodMesh = Util.LoadMesh(string.Concat(Util.AssemblyDirectory, meshPathLod), name + "_LOD");
+            prop.m_material.SetTexture("_MainTex", texture);
+            prop.m_lodMaterial.SetTexture("_MainTex", textureLod);
+            return prop;
+        } */
 
         public bool IsTrainTool(NetInfo info)
         {
